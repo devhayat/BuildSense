@@ -1,0 +1,8 @@
+{
+  "name": "BuildSense AI",
+  "description": "An AI-powered web platform for civil engineers to automate BOQ calculations, detect design errors, and simulate construction scenarios through drawings and natural language.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
