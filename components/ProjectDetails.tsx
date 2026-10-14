@@ -10,8 +10,8 @@ import {
 import { BOQTable } from './BOQTable';
 import { ErrorDetector } from './ErrorDetector';
 import { WhatIfSimulator } from './WhatIfSimulator';
-import { geminiService, decodeBase64, decodeAudioData } from '../services/gemini';
-import { MOCK_BOQ, MOCK_STEEL_DETAILS } from '../constants';
+import { geminiService, decodeBase64, decodeAudioData, buildMarketRatesPrompt } from '../services/gemini';
+import { MOCK_BOQ, MOCK_STEEL_DETAILS, MARKET_RATES, LEARNING_TIPS } from '../constants';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface ProjectDetailsProps {
@@ -104,7 +104,11 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onBack,
       }
 
       if (imageData) {
-        const result = await geminiService.analyzeDrawing(imageData, `${project.buildingType} with ${project.floors} floors`);
+        const regionRates = MARKET_RATES.filter(r => r.rates[project.location]).map(r => ({
+          material: r.material, unit: r.unit, rate: r.rates[project.location]
+        }));
+        const ratesCtx = regionRates.length > 0 ? buildMarketRatesPrompt(regionRates) : undefined;
+        const result = await geminiService.analyzeDrawing(imageData, `${project.buildingType} with ${project.floors} floors in ${project.location}`, ratesCtx);
         if (result && result.boq && result.boq.length > 0) {
           setBoqData(result.boq);
           updateProject({ ...project, boq: result.boq, errors: result.errors, status: 'Analyzed' });
@@ -378,7 +382,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ project, onBack,
           </div>
 
           <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-100 overflow-hidden min-h-[600px] transition-all">
-            {activeSubTab === 'boq' && <BOQTable items={boqData} />}
+            {activeSubTab === 'boq' && <BOQTable items={boqData} userRole={userRole} learningTips={LEARNING_TIPS} onRateUpdate={(itemId, newRate) => { const updated = boqData.map(b => b.id === itemId ? { ...b, rate: newRate, total: b.quantity * newRate } : b); setBoqData(updated); }} />}
             {activeSubTab === 'steel' && (
               <div className="p-10 space-y-10 animate-in slide-in-from-right-8 duration-500">
                 <div className="flex flex-col md:flex-row justify-between items-start gap-4">

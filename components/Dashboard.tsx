@@ -5,9 +5,10 @@ import {
   Plus, MapPin, Building2, TrendingUp, AlertCircle,
   FileSpreadsheet, ClipboardList, LayoutTemplate,
   ArrowRight, Zap, Briefcase, GraduationCap, X, Boxes,
-  Activity, DollarSign, Users, ShieldCheck, BarChart3, Star
+  Activity, DollarSign, Users, ShieldCheck, BarChart3, Star, BookOpen, Database
 } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, CartesianGrid, YAxis } from 'recharts';
+import { PRACTICE_PROJECTS, MARKET_RATES, REGIONS } from '../constants';
 
 interface DashboardProps {
   projects: Project[];
@@ -259,6 +260,78 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, templates, onSel
               </button>
             </div>
           </div>
+
+          {/* Practice Projects for Students */}
+          {userRole === 'Student' && (
+            <div>
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-5">
+                <BookOpen size={20} className="text-emerald-500" />
+                Practice Projects
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full uppercase tracking-widest">Learn</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {PRACTICE_PROJECTS.map(pp => (
+                  <div key={pp.id} onClick={() => { addProject(pp); onSelectProject(pp.id); }} className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-emerald-100 hover:border-emerald-300 hover:shadow-xl transition-all">
+                    <div className="h-28 relative overflow-hidden">
+                      <img src={pp.drawingUrl} alt={pp.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)' }} />
+                      <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase">Practice</span>
+                      <p className="absolute bottom-2 left-3 text-white text-sm font-black">{pp.name}</p>
+                    </div>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 font-bold"><MapPin size={10} /> {pp.location}</div>
+                      <span className="text-[10px] font-black text-emerald-600">{pp.floors}F · {pp.buildingType}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-3 text-center font-medium">Click any project to start practicing BOQ analysis with AI</p>
+            </div>
+          )}
+
+          {/* Rate Master for Admin */}
+          {userRole === 'Admin' && (
+            <div>
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-5">
+                <Database size={20} className="text-rose-500" />
+                Regional Rate Master
+                <span className="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase tracking-widest">CPWD DSR 2026</span>
+              </h3>
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Material</th>
+                        <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Unit</th>
+                        {['Mumbai', 'Delhi', 'Dubai'].map(c => (
+                          <th key={c} className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">{c}</th>
+                        ))}
+                        <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {MARKET_RATES.map(r => (
+                        <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-xs font-bold text-slate-800">{r.material}</td>
+                          <td className="px-4 py-3 text-[10px] text-slate-500 font-medium text-center">{r.unit}</td>
+                          {['Mumbai, IN', 'Delhi, IN', 'Dubai, UAE'].map(region => (
+                            <td key={region} className="px-4 py-3 text-xs font-bold text-slate-700 text-right">
+                              {region.includes('UAE') ? 'AED ' : '\u20B9'}{r.rates[region]?.toLocaleString() || '-'}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 text-[10px] text-indigo-500 font-bold">{r.source}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-3 bg-slate-50 border-t border-slate-200 text-center">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Last Updated: Oct 2026 · {MARKET_RATES.length} Materials · {REGIONS.length} Regions</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Chart panel */}

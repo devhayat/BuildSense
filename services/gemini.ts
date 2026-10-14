@@ -51,33 +51,53 @@ export async function decodeAudioData(
   return buffer;
 }
 
+/**
+ * Builds a human-readable market rates string for the AI prompt.
+ */
+export function buildMarketRatesPrompt(rates: Array<{material: string; unit: string; rate: number}>): string {
+  return rates.map(r => `        - ${r.material}: ${r.rate} per ${r.unit}`).join('\n');
+}
+
 export const geminiService = {
   /**
    * Generates a BOQ and detects errors from a drawing image
    * Enhanced to focus on Machine Understanding of structural elements.
+   * Now accepts optional regional market rates for accurate pricing.
    */
-  async analyzeDrawing(imageData: string, projectContext: string): Promise<{ boq: BOQItem[], errors: DesignError[] }> {
+  async analyzeDrawing(imageData: string, projectContext: string, marketRatesContext?: string): Promise<{ boq: BOQItem[], errors: DesignError[] }> {
+    const ratesInstruction = marketRatesContext
+      ? `
+     4. PRICING INSTRUCTION (CRITICAL):
+        - Use the following REGIONAL MARKET RATES for pricing each BOQ item.
+        - These are verified rates from CPWD DSR and industry sources. Use them as the "rate" field.
+        - Calculate "total" as quantity × rate.
+        - If an item does not have a matching rate below, estimate based on the closest category.
+        - REGIONAL RATES:
+${marketRatesContext}
+`
+      : '';
+
     const prompt = `Act as a Senior Structural Engineer and AI Vision Specialist. 
-    Analyze this structural CAD drawing for a ${projectContext}.
-    
-    1. MACHINE UNDERSTANDING PHASE:
-       - Detect drawing units (mm/m/ft) and scale (e.g., 1:100).
-       - Identify vector layers (Structural, Architectural, BBS).
-       - Detect specific elements: Walls, Slabs, Beams, Columns, Footings.
-       - Separate floor-wise layouts if multiple are present.
-    
-    2. AUTOMATIC BOQ & QUANTITY TAKEOFF:
-       - Calculate exact quantities for: 
-         * Excavation volume (m3)
-         * Concrete volume for Footings, Columns, Beams, and Slabs (m3)
-         * Steel estimation based on structural density (MT)
-         * Brickwork/Masonry (m2/m3)
-         * Plaster area and Flooring area (m2)
-    
-    3. DESIGN ERROR DETECTION:
-       - Check for structural inconsistencies (e.g., beam span issues, missing column supports).
-    
-    Return the data in the following JSON format.`;
+     Analyze this structural CAD drawing for a ${projectContext}.
+     
+     1. MACHINE UNDERSTANDING PHASE:
+        - Detect drawing units (mm/m/ft) and scale (e.g., 1:100).
+        - Identify vector layers (Structural, Architectural, BBS).
+        - Detect specific elements: Walls, Slabs, Beams, Columns, Footings.
+        - Separate floor-wise layouts if multiple are present.
+     
+     2. AUTOMATIC BOQ & QUANTITY TAKEOFF:
+        - Calculate exact quantities for: 
+          * Excavation volume (m3)
+          * Concrete volume for Footings, Columns, Beams, and Slabs (m3)
+          * Steel estimation based on structural density (MT)
+          * Brickwork/Masonry (m2/m3)
+          * Plaster area and Flooring area (m2)
+     
+     3. DESIGN ERROR DETECTION:
+        - Check for structural inconsistencies (e.g., beam span issues, missing column supports).
+     ${ratesInstruction}
+     Return the data in the following JSON format.`;
 
     const response = await getAI().models.generateContent({
       model: 'gemini-3-pro-preview',

@@ -67,3 +67,21 @@ export interface SteelDetail {
   shape: string;
   totalWeight: number;
 }
+
+export interface MarketRate {
+  id: string;
+  material: string;
+  category: string;
+  unit: string;
+  rates: Record<string, number>;
+  lastUpdated: string;
+  source: string;
+}
+
+export interface LearningTip {
+  category: string;
+  title: string;
+  explanation: string;
+  formula?: string;
+  proTip?: string;
+}
